@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# 虚拟环境（各实验共用书仓库里那一个）
+.venv/
+venv/
+
+# 密钥：永远不要提交
+.env
+*.key
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 实验跑出来的产物（可重新生成，不入库）
+ablation_study_report.md
+ablation_study_results.png
+ablation_results.json
+my_result.json
+*.log
