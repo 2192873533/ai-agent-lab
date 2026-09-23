@@ -14,12 +14,23 @@ ai-agent-lab/
 ├── README.md            ← 你在这里
 ├── PROGRESS.md          ← 全书 109 个实验清单 + 进度勾选
 ├── ROADMAP.md           ← 两个月学习路线
+├── commit.ps1           ← 一键提交+推送（自动重试）
 ├── code/                ← 我自己写的代码
+├── notes/               ← 跨实验的通用知识（Python 基础、Agent 概念…）
 └── experiments/         ← 每个实验的笔记
     └── ch01-AI-Agent入门/
         ├── 1-1-上下文的关键作用/NOTES.md
         └── 1-2-Kimi原生Agent能力/NOTES.md
 ```
+
+### notes/ 里有什么
+
+| 文件 | 内容 |
+|---|---|
+| [01-python基础.md](notes/01-python基础.md) | 点链、append、dict、JSON、函数、环境变量 |
+| [02-agent核心概念.md](notes/02-agent核心概念.md) | 消息结构、工具本质、ReAct 循环、可依据性 |
+| [03-工程踩坑.md](notes/03-工程踩坑.md) | 10 个坑 + "能演示 vs 能上生产"的差异 |
+| [04-术语速查.md](notes/04-术语速查.md) | 中英对照 + 常见报错 + 模型差异 |
 
 ---
 
