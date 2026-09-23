@@ -70,11 +70,16 @@ VS Code 里按 `` Ctrl+` `` 开终端，会自动激活 `.venv`（已配好）�
 
 ## 提交习惯
 
-每做完一个实验提交一次，提交信息写清楚实验编号：
+每做完一个实验提交一次。**用 `commit.ps1`，它会自动重试推送**（国内网络到 github.com 不稳定）：
 
 ```powershell
-git add .
-git commit -m "实验 1-2：完成联网搜索 Agent，发现模型会自己决定搜索轮数"
+.\commit.ps1 "实验 1-2：完成联网搜索 Agent，发现模型会自己决定搜索轮数"
 ```
 
 **提交历史本身就是学习轨迹**——两个月后回看，能看出自己是怎么长起来的。
+
+如果脚本执行被拦，先跑一次：
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
