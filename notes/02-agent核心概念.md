@@ -151,6 +151,127 @@ Messages with role 'tool' must be a response to a preceding message with 'tool_c
 
 ---
 
+## 3.5 工具调用的完整生命周期（最高频操作）
+
+### 谁写什么
+
+```
+【我写的】
+  tools = [...]              ← 工具说明书
+  def calculate(...)         ← 工具实现
+  循环逻辑 / append 逻辑      ← 程序
+
+【模型每次回复时生成的】
+  message.tool_calls
+    ├─ id             = "call_00_B96N..."   ← 服务端生成
+    ├─ function.name  = "calculate"          ← 模型从清单里选
+    └─ function.arguments                    ← 模型按 schema 生成
+  message.content            ← 模型的文字回复
+
+【我的代码生成的】
+  tool 消息的 content         ← 工具执行的结果
+```
+
+### 方向相反，别绕晕
+
+```
+我   ──→  模型     tools 清单        "你有这些工具可用"     ← 我写的
+模型 ──→  我       tool_calls 请求   "请帮我调这个工具"     ← 它生成的
+```
+
+| | 谁生成 | 内容 | 谁读 |
+|---|---|---|---|
+| `tools` | **我** | "我有这些工具" | **模型** |
+| `tool_calls` | **模型** | "请你帮我调这个" | **我的代码** |
+
+**我负责"摆工具"，模型负责"要工具"。**
+`tool_calls` 完全不用我写——它是模型的输出，我只读不写。
+
+### 三个关键字段的含义
+
+**`tool_calls`** = 模型这一轮要调用的工具**清单**（列表，可能多个）
+
+```python
+[
+    {"id": "call_A", "function": {"name": "convert_currency", "arguments": "..."}},
+    {"id": "call_B", "function": {"name": "get_time",         "arguments": "{}"}},
+]
+```
+
+**一轮可以同时要调好几个工具**，所以是列表、要遍历。
+
+**`tool_call_id`** = 这次调用的**快递单号**
+
+服务端生成的唯一 ID。回填结果时必须带上，否则模型不知道
+哪条结果配哪个请求。
+
+```python
+"tool_call_id": call.id
+                 ↑ 同一个值，只是字段名不同（请求里叫 id，回复里叫 tool_call_id）
+```
+
+⚠️ **不能自己编。** 服务端会逐条核对，编的话直接 400：
+`must be a response to a preceding message with 'tool_calls'`
+
+**`args["expression"]`** = 从字典里**按键取值**
+
+```python
+args = json.loads(call.function.arguments)   # 字符串 → 字典
+result = calculate(args["expression"])       # 按键取值
+```
+
+C 类比：`args->expression` vs `args["expression"]`，同一个操作。
+
+⚠️ **`"expression"` 这个名字是我自己在 `tools` 里定的**，四处必须一致：
+
+```
+① tools 里 properties 的键名
+② tools 里 required 的名字
+③ 模型生成的 arguments 的键名（它按说明书来）
+④ 代码里 args["..."] 的名字
+```
+
+**对不上会报 `KeyError`。** 看到这个错，第一反应就是回去对名字。
+
+### 完整时间线
+
+```
+时刻 1   我写：tools = [...]                              ← 我
+时刻 2   我发请求，带上 tools                             ← 我
+时刻 3   模型生成 tool_calls（id / name / arguments）      ← 模型 + 服务端
+时刻 4   我的程序：读 tool_calls，执行工具                 ← 我读
+时刻 5   我的程序：组装 tool 消息，把 call.id 抄进 tool_call_id ← 我抄
+时刻 6   我发第二次请求                                   ← 我
+时刻 7   服务端校验：每个 tool_call_id 都能找到对应 id      ← 服务端
+时刻 8   模型看到结果，生成最终回答                        ← 模型
+```
+
+### 代码里的对应
+
+```python
+for call in message.tool_calls:              # tool_calls = 清单
+    args = json.loads(call.function.arguments)   # arguments 是 JSON 字符串
+    result = calculate(args["expression"])       # 按键取值
+    messages.append({
+        "role": "tool",
+        "tool_call_id": call.id,                 # 快递单号，原样抄
+        "content": result,                       # 我的代码产生的结果
+    })
+```
+
+### 谁产生什么（速查）
+
+| 东西 | 谁产生 | 我做什么 |
+|---|---|---|
+| `tools` | **我** | 写 |
+| `tool_calls` | **模型** | 读 |
+| `call.id` | **服务端** | 抄 |
+| `function.name` | **模型**（从清单里选） | 读 |
+| `function.arguments` | **模型**（按 schema 生成） | 解析 |
+| tool 消息的 `content` | **我的代码** | 写 |
+
+---
+
 ## 4. ReAct 循环
 
 ```
