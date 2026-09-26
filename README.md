@@ -17,11 +17,23 @@ ai-agent-lab/
 ├── commit.ps1           ← 一键提交+推送（自动重试）
 ├── code/                ← 我自己写的代码
 ├── notes/               ← 跨实验的通用知识（Python 基础、Agent 概念…）
+├── annotated/           ← 带逐行注释的源码
+├── interview/           ← 面试题库（按章整理书里的思考题）
 └── experiments/         ← 每个实验的笔记
     └── ch01-AI-Agent入门/
         ├── 1-1-上下文的关键作用/NOTES.md
-        └── 1-2-Kimi原生Agent能力/NOTES.md
+        ├── 1-2-Kimi原生Agent能力/NOTES.md
+        ├── 1-3-原生DeepResearch能力/NOTES.md
+        └── 1-4-文生图工作流对照/NOTES.md
 ```
+
+### interview/ 里有什么
+
+| 文件 | 内容 |
+|---|---|
+| [第1章-思考题.md](interview/第1章-思考题.md) | 书里第 1 章的 10 道思考题 + 答题骨架 + 通用答题框架 |
+
+**这些题几乎都是面试原题的类型。** 每学完一章追加一份。
 
 ### notes/ 里有什么
 
