@@ -162,6 +162,98 @@ except json.JSONDecodeError:
     args = {}          # 兜住，保持循环存活
 ```
 
+### 它到底干什么（真实输入输出）
+
+```
+输入：'{"query": "比特币走势", "limit": 10}'
+      类型是 str（字符串）
+
+        ↓  json.loads(...)
+
+输出：{'query': '比特币走势', 'limit': 10}
+      类型是 dict（字典）
+```
+
+**把"一段文本"变成"能直接用的数据结构"。**
+
+注意引号的变化：JSON 用**双引号**，Python 打印出来用**单引号**——同一个数据，换了身衣服。
+
+### C 类比
+
+```c
+// C：手工拆字符串
+char buf[] = "{\"name\": \"小明\", \"age\": 18}";
+char name[50]; int age;
+sscanf(buf, "{\"name\": \"%[^\"]\", \"age\": %d}", name, &age);
+// 还要自己处理空格、转义、缺括号、嵌套……
+```
+
+```python
+# Python：一行
+data = json.loads('{"name": "小明", "age": 18}')
+name = data["name"]      # 直接能用
+```
+
+### 四个函数一张表
+
+| 函数 | 方向 | 从哪 / 到哪 |
+|---|---|---|
+| `json.load(fp)` | JSON → Python | 从**文件**读 |
+| **`json.loads(s)`** | JSON → Python | 从**字符串**读 |
+| `json.dump(obj, fp)` | Python → JSON | 写**到文件** |
+| **`json.dumps(obj)`** | Python → JSON | 变成**字符串** |
+
+> **记忆法：带 `s` 的是字符串（string），不带 `s` 的是文件（file）。**
+
+### 为什么 Agent 里到处都是它
+
+**模型和我的代码说的是两种"语言"：**
+
+```
+方向一：模型给的参数是字符串，我要变成字典
+  模型生成    '{"expression": "987654321 * 123456789"}'    ← 字符串
+                          ↓ json.loads()
+  我的代码    {"expression": "987654321 * 123456789"}      ← 字典
+                          ↓ ["expression"]
+  计算函数    "987654321 * 123456789"
+
+方向二：工具返回的字典，我要变成字符串
+  工具返回    {"converted_amount": 1681969.62}             ← 字典
+                          ↓ json.dumps()
+  发给模型    '{"converted_amount": 1681969.62}'           ← 必须是字符串
+```
+
+**为什么模型给的是字符串？** 因为 API 协议规定 `arguments` 字段必须是字符串——
+就像 HTTP 传的都是字节流，**文本是跨系统的通用格式**。
+
+### `ensure_ascii=False` 是什么
+
+```
+默认 ensure_ascii=True   : {"query": "\u6bd4\u7279\u5e01\u8d70\u52bf", "limit": 10}
+改成 ensure_ascii=False  : {"query": "比特币走势", "limit": 10}
+```
+
+| 参数 | 中文会怎样 |
+|---|---|
+| 默认（`True`） | 变成 `\u6bd4\u7279\u5e01...` 转义码 |
+| `ensure_ascii=False` | **保持中文原样** |
+
+**为什么要加它？** 一个中文字转义后占 6 个字符，发给模型白白浪费 token。
+**一个抠细节的优化——这正是"上下文工程"里省钱的地方。**
+
+### 坏 JSON 的报错长什么样
+
+```
+抛出的异常类型 : JSONDecodeError
+异常信息       : Expecting ',' delimiter: line 1 column 19 (char 18)
+```
+
+**报错会告诉你"第几行第几列"**，这就是上面 `except json.JSONDecodeError` 捕获的东西。
+
+### 可以玩的脚本
+
+`work/json_demo.py`（在 ppt-ppt 目录下）——改一行跑一次，看输出怎么变。
+
 ---
 
 ## 6. 函数
