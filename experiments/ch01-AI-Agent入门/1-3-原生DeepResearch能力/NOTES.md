@@ -4,8 +4,22 @@
 |---|---|
 | 难度 | ★ |
 | 书源码 | `chapter1/search-codegen/` |
-| 状态 | ⬜ 未开始 |
-| 日期 | |
+| 状态 | ⏸️ **暂时跳过** |
+| 日期 | — |
+| 原因 | 需要**服务端托管的 web search + code interpreter**，即 OpenAI 或阿里云百炼（DashScope）的 Key。我只有 DeepSeek，DeepSeek 没有这类托管工具，跑不了。 |
+
+## 想跑的话需要什么
+
+| 方案 | 需要什么 |
+|---|---|
+| 官方路径 | OpenAI API Key（书里用 `gpt-5.6-sol`） |
+| 等价路径 | 阿里云百炼 [DashScope](https://bailian.console.aliyun.com/) Key，用 `qwen3.7-plus` |
+
+书里明确说了**这个实验不绑定厂商**——只要提供商的 API 有等价的托管工具就行。
+
+**先跳过不影响学习**：1-3 的核心知识点（服务端闭环 vs 客户端循环）已经在实验 1-2 的笔记里对比过了。
+
+---
 
 ## 要验证什么
 
