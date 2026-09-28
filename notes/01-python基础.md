@@ -493,3 +493,264 @@ i = i + 1        # 从 1 开始计数，和书里的 iteration 编号对齐
 > 后者看代码就知道，前者只有写的人知道。
 
 **自测方法：写不出注释的地方，说明那行还没懂。**
+
+---
+
+## 12. 类与对象（C 程序员视角）
+
+**C 里没有"类"，最接近的是"struct + 一堆操作它的函数"。Python 把数据和操作打包在一起。**
+
+```python
+class ToolCallingAgent:
+    """文档字符串：说明这个类是干什么的"""
+
+    def __init__(self, backend=None):        # ← 构造函数
+        self.agent = None                    # ← 实例属性
+        self.backend_type = backend or self._detect_best_backend()
+
+    def chat(self, message):                 # ← 方法
+        return self.agent.chat(message)
+```
+
+### 三个必须记住的点
+
+| 点 | 说明 |
+|---|---|
+| **`__init__`** | 构造函数。**前后各两个下划线**是 Python 对"特殊方法"的标记 |
+| **`self`** | **就是 C 里的 `this`**，但 Python 要求你**显式写在第一个参数位置** |
+| **`_名字`** | 下划线开头 = "内部方法，外部别直接调"。**只是约定，不强制** |
+
+### `self` 的对照
+
+```c
+// C：this 是隐式的
+void chat(Agent* this, char* msg) {
+    this->agent->chat(msg);
+}
+```
+
+```python
+# Python：self 必须显式写
+def chat(self, message):
+    return self.agent.chat(message)
+```
+
+**C 里 `p->field`，Python 里 `self.field`。同一个意思。**
+
+---
+
+## 13. `A or B` 的短路取值（不是判断 NULL！）
+
+```python
+self.backend_type = backend or self._detect_best_backend()
+```
+
+**读作：如果 `backend` 是"真值"就用它，否则用后面那个。**
+
+### ⚠️ 它判断的是"真值"，不是"是不是 None"
+
+```c
+// C 里你写的
+if (p != NULL) { use(p); } else { default(); }
+```
+
+```python
+# Python 里可以简写成
+p or default()
+```
+
+**但 Python 的"假值"有六个：**
+
+```python
+None、""（空串）、0、[]（空列表）、{}（空字典）、False
+```
+
+**所以 `backend=""` 也会触发自动检测——这跟 C 的"指针空不空"不是一回事。**
+
+### 常见变体
+
+```python
+config = payload.get("context") or {}      # 取不到就换成空字典（防止下一步 .get 报错）
+```
+
+---
+
+## 14. `try / except` 的三种典型用法
+
+### 用法 1：可选依赖（没装也不崩）
+
+```python
+try:
+    import torch
+    if torch.cuda.is_available():
+        return "vllm"
+except ImportError:
+    pass                    # ← 没装 torch，直接跳过，不算错误
+```
+
+**读作："试着导入；没装就算了。"**
+
+### 用法 2：把错误变成信息返回（兜住）
+
+```python
+try:
+    args = json.loads(call.function.arguments or "{}")
+except json.JSONDecodeError:
+    args = {}               # ← 用空对象继续，保持循环存活
+    logger.warning(...)
+```
+
+**适合"中间态"错误——错误本身能变成信息传给上游纠正。**
+
+### 用法 3：分层错误，给不同提示
+
+```python
+try:                        # 外层：管"包装没装"
+    import ollama
+    try:                    # 内层：管"服务没跑"
+        ...
+    except Exception as e:
+        logger.error(f"Ollama is not running: {e}")
+        logger.info("Please start Ollama: ...")      # ← 带解决方案
+except ImportError:
+    logger.error("Ollama not installed")
+    logger.info("Install with: pip install ollama")  # ← 带解决方案
+```
+
+**原则：错误提示的粒度，应该匹配用户需要做的动作。**
+
+### 什么时候不该兜住
+
+**"没法继续了"的错误要立刻抛，不要静默吞掉。**
+
+```python
+if result in (None, ""):
+    raise RuntimeError("... returned no output")   # ← 继续只会让错的流下去
+```
+
+**判断标准：这个错误能不能变成有用的信息，传给上游纠正？能就兜住，不能就放手。**
+
+---
+
+## 15. 函数是一等公民（C 里没有）
+
+**Python 里函数可以像数字、字符串一样被存进字典、当参数传。**
+
+```python
+self.tools[name] = {
+    "function": self.get_current_temperature,   # ← 存的是【函数本身】，不是调用结果
+    "description": "...",
+}
+
+# 用的时候
+result = self.tools[name]["function"](**arguments)   # ← 取出来直接调
+```
+
+**注意 `self.get_current_temperature` 后面**没有括号**：
+有括号是"调用它、拿返回值"；没有括号是"把函数本身当值传过去"。**
+
+**C 里最接近的是"函数指针"。**
+
+---
+
+## 16. ⭐ 生成器 `yield`（C 里没有）
+
+```python
+def chat_stream(...):
+    for chunk in stream_response:
+        yield {"type": "thinking", "content": chunk}    # ← 不是 return
+```
+
+### `yield` 和 `return` 的区别
+
+| | 行为 |
+|---|---|
+| **`return`** | 返回**一次**，函数就**结束了** |
+| **`yield`** | 可以返回**很多次**，每次返回后**暂停**，下次从暂停处**继续** |
+
+**`yield` 的准确含义：**
+
+> "我先交出这个值，然后**暂停**在这里。等你下次来要，我**从这里继续**往下跑。"
+
+### 用了 yield 的函数叫"生成器函数"
+
+**调用它不会立刻执行**，而是返回一个"可以不断取值的东西"：
+
+```python
+for chunk in agent.chat(task, stream=True):    # ← 每取一次，函数就跑一段，yield 一个值
+    处理(chunk)
+```
+
+**C 里最接近的是"回调函数"——每收到一块就调用一次回调。
+但 `yield` 让代码写起来像普通循环，不用把逻辑拆成回调。**
+
+### 典型场景
+
+**流式输出**：服务端一块块给，你就一块块 `yield` 出去，调用方一块块显示。
+
+---
+
+## 17. `print` 的两个关键参数
+
+```python
+print(f"\033[90m{content}\033[0m", end="", flush=True)
+```
+
+| 参数 | 默认 | 作用 |
+|---|---|---|
+| **`end=""`** | `"\n"`（换行） | 改成空串 → **不换行，接着上一次继续打** |
+| **`flush=True`** | `False` | **立刻输出，不要缓冲** |
+
+**为什么流式必须用这两个：**
+
+- 不加 `end=""` → 每块都换一行，输出会碎成几十行
+- 不加 `flush=True` → Python 可能攒一批才输出，**流式就白做了**
+
+### ANSI 转义码（控制终端颜色）
+
+```python
+print("\033[90m这是灰色\033[0m 这是默认色")
+```
+
+| 码 | 作用 |
+|---|---|
+| `\033[90m` | 开始：暗灰色 |
+| `\033[0m` | 恢复：默认颜色 |
+
+**`\033` 是 ESC 字符（ASCII 27）。你在终端里看到"思考文字是灰色"，就是它在起作用。**
+
+---
+
+## 18. 实用内置函数与语法速查
+
+| 函数/语法 | 作用 | 例子 |
+|---|---|---|
+| `isinstance(值, 类型)` | 判断类型 | `isinstance(x, str)` |
+| `hasattr(对象, '属性')` | 判断对象有没有这个属性 | `hasattr(resp, 'models')` |
+| `值 in 容器` | 判断在不在里面 | `"qwen3:0.6b" in models` |
+| `字典.items()` | 遍历键值对 | `for name, tool in self.tools.items():` |
+| `字典.get(键, 默认)` | 安全取值 | `payload.get("status")` |
+| `len(容器)` | 长度 | `len(tool_calls)` |
+| `round(数, 位数)` | 四舍五入 | `round(x, 6)` |
+| `sys.exit(1)` | 立刻退出（1 = 出错） | 等价于 C 的 `exit(1)` |
+| `eval("1+1")` | 把字符串当代码**算**并返回结果 | `eval("2+3")` → 5 |
+| `exec(code)` | 把字符串当代码**执行**（不返回结果） | 用来跑一段脚本 |
+
+> **`eval` 和 `exec` 的区别：`eval` 求值（有返回值），`exec` 执行（没返回值）。**
+> **两个都很危险**（能执行任意代码），生产环境不能直接用在用户输入上。
+
+### `**` 字典解包（C 里没有）
+
+```python
+arguments = {"location": "Tokyo", "unit": "celsius"}
+func(**arguments)
+# 等价于
+func(location="Tokyo", unit="celsius")
+```
+
+**`**` 把字典拆成一组关键字参数；单个 `*` 用于列表解包：**
+
+```python
+args = [1, 2, 3]
+func(*args)      # 等价于 func(1, 2, 3)
+```
