@@ -16,15 +16,18 @@ ai-agent-lab/
 ├── ROADMAP.md           ← 两个月学习路线
 ├── commit.ps1           ← 一键提交+推送（自动重试）
 ├── code/                ← 我自己写的代码
-├── notes/               ← 跨实验的通用知识（Python 基础、Agent 概念…）
+├── notes/               ← 跨实验的通用知识（Python 基础、Agent 概念、Skill 编写…）
 ├── annotated/           ← 带逐行注释的源码
 ├── interview/           ← 面试题库（按章整理书里的思考题）
 └── experiments/         ← 每个实验的笔记
-    └── ch01-AI-Agent入门/
-        ├── 1-1-上下文的关键作用/NOTES.md
-        ├── 1-2-Kimi原生Agent能力/NOTES.md
-        ├── 1-3-原生DeepResearch能力/NOTES.md
-        └── 1-4-文生图工作流对照/NOTES.md
+    ├── ch01-AI-Agent入门/
+    │   ├── 1-1-上下文的关键作用/NOTES.md
+    │   ├── 1-2-Kimi原生Agent能力/NOTES.md
+    │   ├── 1-3-原生DeepResearch能力/NOTES.md
+    │   └── 1-4-文生图工作流对照/NOTES.md
+    └── ch02-上下文工程/
+        ├── 2-1-本地LLM服务部署与工具调用/NOTES.md
+        └── 2-7-去AI味写作Skill/          ← 实验产物：qu-ai-wei/ 这份 SKILL.md
 ```
 
 ### interview/ 里有什么
@@ -43,6 +46,7 @@ ai-agent-lab/
 | [02-agent核心概念.md](notes/02-agent核心概念.md) | 消息结构、工具本质、ReAct 循环、可依据性 |
 | [03-工程踩坑.md](notes/03-工程踩坑.md) | 10 个坑 + "能演示 vs 能上生产"的差异 |
 | [04-术语速查.md](notes/04-术语速查.md) | 中英对照 + 常见报错 + 模型差异 |
+| [05-Skill编写.md](notes/05-Skill编写.md) | 模型/Harness/用户三个角色、渐进式披露成本结构、两条触发入口、Skill 检查清单 |
 
 ---
 
