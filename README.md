@@ -26,8 +26,17 @@ ai-agent-lab/
     │   ├── 1-3-原生DeepResearch能力/NOTES.md
     │   └── 1-4-文生图工作流对照/NOTES.md
     └── ch02-上下文工程/
+        ├── README.md                    ← 全章骨架（KV Cache 机制、铁律、踩坑清单、10 实验索引）
         ├── 2-1-本地LLM服务部署与工具调用/NOTES.md
-        └── 2-7-去AI味写作Skill/          ← 实验产物：qu-ai-wei/ 这份 SKILL.md
+        ├── 2-2-注意力机制可视化/NOTES.md
+        ├── 2-3-常见的错误上下文管理模式/NOTES.md
+        ├── 2-4-提示工程消融实验/NOTES.md
+        ├── 2-5-提示注入攻防实验/NOTES.md
+        ├── 2-6-用AgentSkills生成PPT/NOTES.md
+        ├── 2-7-去AI味写作Skill/          ← 实验产物：qu-ai-wei/ 这份 SKILL.md
+        ├── 2-8-注意力可视化验证状态栏/NOTES.md
+        ├── 2-9-Agent状态栏技术/NOTES.md
+        └── 2-10-上下文压缩策略对比/NOTES.md
 ```
 
 ### interview/ 里有什么
